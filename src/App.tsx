@@ -1,11 +1,13 @@
 // Fully commented on https://www.bricks-platform.com/BlogPost/Creating%20a%20Simple%20Map%20with%20OpenLayers%20and%20React
 import React, { useRef, useEffect, useState } from "react";
-import Bookmarks from '@arcgis/core/widgets/Bookmarks';
-import Expand from '@arcgis/core/widgets/Expand';
+import Bookmarks from "@arcgis/core/widgets/Bookmarks";
+import Expand from "@arcgis/core/widgets/Expand";
 import MapView from "@arcgis/core/views/MapView";
 import WebMap from "@arcgis/core/WebMap";
-
-
+import BaseMap from "@arcgis/core/Basemap";
+import VectorTileLayer from "@arcgis/core/layers/VectorTileLayer";
+import Point from "@arcgis/core/geometry/Point";
+import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 
 function App() {
   const mapTargetElement = useRef<HTMLDivElement>(null);
@@ -13,46 +15,35 @@ function App() {
   const [map, setMap] = useState<MapView>();
 
   useEffect(() => {
+    const basemapVTURL = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/HK80";
+    const mapLabelVTUrl = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk/en/HK80";
 
     if (mapTargetElement.current) {
       /**
        * Initialize application
        */
+
+      const basemap = new BaseMap({
+        baseLayers: [
+          new VectorTileLayer({
+            url: basemapVTURL,
+          }),
+        ],
+      });
+
       const webmap = new WebMap({
-        portalItem: {
-          id: "aa1d3f80270146208328cf66d022e09c"
-        }
+        basemap: basemap,
       });
 
       const view = new MapView({
         container: mapTargetElement.current,
-        map: webmap
+        map: webmap,
+        center: new Point({ longitude: 833359.88495, latitude: 822961.986247, spatialReference: new SpatialReference({ wkid: 2326 }) }),
       });
 
-      const bookmarks = new Bookmarks({
-        view,
-        // allows bookmarks to be added, edited, or deleted
-        editingEnabled: true
-      });
-
-      const bkExpand = new Expand({
-        view,
-        content: bookmarks,
-        expanded: true
-      });
-
-      // Add the widget to the top-right corner of the view
-      view.ui.add(bkExpand, "top-right");
-
-      // bonus - how many bookmarks in the webmap?
-      webmap.when(() => {
-        if (webmap.bookmarks && webmap.bookmarks.length) {
-          console.log("Bookmarks: ", webmap.bookmarks.length);
-        } else {
-          console.log("No bookmarks in this webmap.");
-        }
-      });
+      webmap.add(new VectorTileLayer({ url: mapLabelVTUrl }));
     }
+
     // thismap.setTarget(mapTargetElement.current || "");
     // setMap(thismap);
 
