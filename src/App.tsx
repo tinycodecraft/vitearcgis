@@ -16,7 +16,7 @@ function App() {
 
   useEffect(() => {
     const basemapVTURL = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/HK80";
-    const mapLabelVTUrl = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk/en/HK80";
+    const mapLabelVTUrl = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk/tc/HK80";
 
     if (mapTargetElement.current) {
       /**
@@ -39,6 +39,8 @@ function App() {
         container: mapTargetElement.current,
         map: webmap,
         center: new Point({ longitude: 833359.88495, latitude: 822961.986247, spatialReference: new SpatialReference({ wkid: 2326 }) }),
+        zoom: 10,
+
       });
 
       webmap.add(new VectorTileLayer({ url: mapLabelVTUrl }));
