@@ -8,6 +8,10 @@ import BaseMap from "@arcgis/core/Basemap";
 import VectorTileLayer from "@arcgis/core/layers/VectorTileLayer";
 import Point from "@arcgis/core/geometry/Point";
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
+import Search from "@arcgis/core/widgets/Search";
+import SearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 
 function App() {
   const mapTargetElement = useRef<HTMLDivElement>(null);
@@ -35,15 +39,36 @@ function App() {
         basemap: basemap,
       });
 
-      const view = new MapView({
+      webmap.add(new VectorTileLayer({ url: mapLabelVTUrl }));
+
+      const thisview = new MapView({
         container: mapTargetElement.current,
         map: webmap,
         center: new Point({ longitude: 833359.88495, latitude: 822961.986247, spatialReference: new SpatialReference({ wkid: 2326 }) }),
         zoom: 10,
-
       });
 
-      webmap.add(new VectorTileLayer({ url: mapLabelVTUrl }));
+      const searchWidget = new Search({
+        view: thisview,
+        sources: [
+          new LayerSearchSource({
+            layer: new FeatureLayer({
+              url: "https://geodata.gov.hk/gs/api/v1.0.0/locationSearch",
+            }),
+            searchFields: ["q"],
+            displayField: "nameZH",
+            exactMatch: false,
+            outFields: ["addressZH", "nameZH", "x", "y", "addressEN", "nameEN"],
+          }),
+        ],
+
+        goToOverride: (view, gotoParams) => {
+          gotoParams.target.spatialReference = { wkid: 2326 };
+          return view.goTo(gotoParams.target);
+        },
+      });
+
+      thisview.ui.add(searchWidget, { position: "top-right" });
     }
 
     // thismap.setTarget(mapTargetElement.current || "");
