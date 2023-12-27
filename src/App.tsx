@@ -10,9 +10,9 @@ import Point from "@arcgis/core/geometry/Point";
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 import Search from "@arcgis/core/widgets/Search";
 import request from "@arcgis/core/request";
-import SearchSource from "@arcgis/core/widgets/Search/SearchSource";
-import {A, pipe}  from '@mobily/ts-belt'
-
+import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
+import { A, pipe } from "@mobily/ts-belt";
+import Extent from "@arcgis/core/geometry/Extent";
 // import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 // import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 // import * as geometryEngine from "@arcgis/core/geometry/geometryEngine";
@@ -36,10 +36,6 @@ interface NearBySuggestion {
   y: number;
   additionalInfoKey?: string[];
 }
-const idGen = (() => {
-  let id = 0
-  return () => id++
-})()
 
 function App() {
   const mapTargetElement = useRef<HTMLDivElement>(null);
@@ -57,12 +53,12 @@ function App() {
        * Initialize application
        */
 
+      const baseLayer = new VectorTileLayer({
+        url: basemapVTURL,
+      });
+
       const basemap = new BaseMap({
-        baseLayers: [
-          new VectorTileLayer({
-            url: basemapVTURL,
-          }),
-        ],
+        baseLayers: [baseLayer],
       });
 
       const webmap = new WebMap({
@@ -78,8 +74,11 @@ function App() {
         zoom: 10,
       });
 
-      const locationSource = new SearchSource({
+      const locationSource = new LayerSearchSource({
         placeholder: "HK Gov CSDI search",
+
+        layer: baseLayer,
+        zoomScale: 240,
 
         getResults: (params) => {
           console.log(`the parameters from results`, params);
@@ -91,6 +90,19 @@ function App() {
               spatialReference: new SpatialReference({ wkid: 2326 }),
             }),
           });
+
+          const bufferXInDegrees = 1;
+          const bufferYInDegrees = 1;
+
+          // Create an extent based on the point and buffer distances
+          const outerExtent = new Extent({
+            xmin: params?.suggestResult?.x - bufferXInDegrees,
+            ymin: params?.suggestResult?.y - bufferYInDegrees,
+            xmax: params?.suggestResult?.x + bufferXInDegrees,
+            ymax: params?.suggestResult?.y + bufferYInDegrees,
+            spatialReference: outerGraphic.geometry.spatialReference,
+          });
+          outerExtent.expand(50);
 
           return request(nearBySearchUrl, {
             query: {
@@ -108,9 +120,23 @@ function App() {
               .map((item: NearBySuggestion) => {
                 const graphic = new Graphic({
                   geometry: new Point({ x: item.x, y: item.y, spatialReference: new SpatialReference({ wkid: 2326 }) }),
+                  attributes: {
+                    x: item.x,
+                    y: item.y,
+                    label: item.address,
+                    name: item.name,
+                  },
                 });
+                const innerExtent = new Extent({
+                  xmin: item.x - bufferXInDegrees,
+                  ymin: item.y - bufferYInDegrees,
+                  xmax: item.x + bufferXInDegrees,
+                  ymax: item.y + bufferYInDegrees,
+                  spatialReference: graphic.geometry.spatialReference,
+                });
+                innerExtent.expand(50);
                 return {
-                  extent: graphic.geometry.extent,
+                  extent: innerExtent,
                   feature: graphic,
                   name: item.name,
                 };
@@ -120,9 +146,10 @@ function App() {
               console.log(`the suggestResult cannot get any nearby`, params?.suggestResult);
               return [
                 {
-                  extent: outerGraphic.geometry.extent,
+                  extent: outerExtent,
                   feature: outerGraphic,
                   name: params?.suggestResult.text,
+                  
                 },
               ];
             }
@@ -132,16 +159,18 @@ function App() {
                 extent: outerGraphic.geometry.extent,
                 feature: outerGraphic,
                 name: params?.suggestResult.text,
+                
               },
               ...results,
             ];
           });
         },
 
-        outFields: [ "text"],
-        
+        outFields: ["text"],
+        autoNavigate: true,
+
         getSuggestions: (params) => {
-          console.log(`test parameters from getsuggestions`,params)
+          console.log(`test parameters from getsuggestions`, params);
           return request(locationSearchUrl, {
             query: {
               q: params.suggestTerm.replace(/ /g, "+"),
@@ -149,8 +178,8 @@ function App() {
             responseType: "json",
           }).then((result) => {
             console.log(`the result from suggestions`, result);
-            
-            const data =  result.data.map((item: ItemSuggestion) => {
+
+            const data = result.data.map((item: ItemSuggestion) => {
               let text = item.addressEN;
               if (!text) text = item.addressZH;
               else {
@@ -179,17 +208,22 @@ function App() {
               };
             });
 
-            const transdata =  sort(data as { key: string, text: string, sourceIndex: number, spatialReference: SpatialReference}[]).desc([u=> u.text]);
+            const transdata = sort(data as { key: string; text: string; sourceIndex: number; spatialReference: SpatialReference }[]).desc([
+              (u) => u.text.length,
+              (u) => u.text,
+            ]);
 
-            return pipe(transdata,A.uniqBy(e=> e.text)).map(e=> e);
-
+            return pipe(
+              transdata,
+              A.uniqBy((e) => e.text)
+            ).map((e) => e);
           });
         },
       });
 
-
       const searchWidget = new Search({
         view: thisview,
+
         sources: [
           locationSource,
           // new LayerSearchSource({
@@ -218,9 +252,9 @@ function App() {
       });
 
       thisview.ui.add(searchWidget, { position: "top-right" });
-
-      
-
+      searchWidget.on("select-result", function (e) {
+        console.log(`the select result`, e);
+      });
     }
 
     // thismap.setTarget(mapTargetElement.current || "");
