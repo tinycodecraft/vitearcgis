@@ -13,6 +13,7 @@ import request from "@arcgis/core/request";
 import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 import { A, pipe } from "@mobily/ts-belt";
 import Extent from "@arcgis/core/geometry/Extent";
+import config from '@arcgis/core/config'
 // import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 // import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 // import * as geometryEngine from "@arcgis/core/geometry/geometryEngine";
@@ -48,10 +49,13 @@ function App() {
     const locationSearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/locationSearch";
     const nearBySearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/searchNearby";
 
+    
     if (mapTargetElement.current) {
       /**
        * Initialize application
        */
+
+
 
       const baseLayer = new VectorTileLayer({
         url: basemapVTURL,
@@ -83,12 +87,13 @@ function App() {
         getResults: (params) => {
           console.log(`the parameters from results`, params);
 
+          const outerPoint = new Point({
+            x: params?.suggestResult?.x,
+            y: params?.suggestResult?.y,
+            spatialReference: new SpatialReference({ wkid: 2326 }),
+          })
           const outerGraphic = new Graphic({
-            geometry: new Point({
-              x: params?.suggestResult?.x,
-              y: params?.suggestResult?.y,
-              spatialReference: new SpatialReference({ wkid: 2326 }),
-            }),
+            geometry: outerPoint,
             attributes: {
               x: params?.suggestResult?.x,
               y: params?.suggestResult?.y,
@@ -126,8 +131,9 @@ function App() {
               .filter((e: NearBySuggestion) => e.address && e.address !== "")
               .slice(0, 1)
               .map((item: NearBySuggestion) => {
+                const innerPoint = new Point({ x: item.x, y: item.y, spatialReference: new SpatialReference({ wkid: 2326 }) });
                 const graphic = new Graphic({
-                  geometry: new Point({ x: item.x, y: item.y, spatialReference: new SpatialReference({ wkid: 2326 }) }),
+                  geometry: innerPoint,
                   attributes: {
                     x: item.x,
                     y: item.y,
@@ -148,6 +154,7 @@ function App() {
                   extent: innerExtent,
                   feature: graphic,
                   name: item.name,
+                  target: { center: innerPoint, scale: 540}
                 };
               });
 
@@ -162,15 +169,16 @@ function App() {
                 },
               ];
             }
-
+            console.log(`some nearby found!!`)
             return [
               {
                 extent: outerGraphic.geometry.extent,
                 feature: outerGraphic,
                 name: params?.suggestResult.text,
                 
+                
               },
-               // ...results,
+               ...results,
             ];
           });
         },
