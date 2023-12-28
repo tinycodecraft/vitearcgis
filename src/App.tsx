@@ -89,6 +89,14 @@ function App() {
               y: params?.suggestResult?.y,
               spatialReference: new SpatialReference({ wkid: 2326 }),
             }),
+            attributes: {
+              x: params?.suggestResult?.x,
+              y: params?.suggestResult?.y,
+              spatialReference: new SpatialReference({ wkid: 2326 }),
+              label: params?.suggestResult?.text,
+              name: params?.suggestResult?.text,
+              
+            }
           });
 
           const bufferXInDegrees = 1;
@@ -116,7 +124,7 @@ function App() {
 
             const results = result.data
               .filter((e: NearBySuggestion) => e.address && e.address !== "")
-              .slice(0, 3)
+              .slice(0, 1)
               .map((item: NearBySuggestion) => {
                 const graphic = new Graphic({
                   geometry: new Point({ x: item.x, y: item.y, spatialReference: new SpatialReference({ wkid: 2326 }) }),
@@ -125,6 +133,7 @@ function App() {
                     y: item.y,
                     label: item.address,
                     name: item.name,
+                    spatialReference: new SpatialReference({ wkid: 2326 })
                   },
                 });
                 const innerExtent = new Extent({
@@ -161,7 +170,7 @@ function App() {
                 name: params?.suggestResult.text,
                 
               },
-              ...results,
+               // ...results,
             ];
           });
         },
@@ -253,7 +262,7 @@ function App() {
 
       thisview.ui.add(searchWidget, { position: "top-right" });
       searchWidget.on("select-result", function (e) {
-        console.log(`the select result`, e);
+        return thisview.goTo({center: new Point(e.result.feature.attributes), scale: 540});
       });
     }
 
