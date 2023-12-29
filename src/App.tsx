@@ -13,7 +13,7 @@ import request from "@arcgis/core/request";
 import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 import { A, pipe } from "@mobily/ts-belt";
 import Extent from "@arcgis/core/geometry/Extent";
-import config from '@arcgis/core/config'
+import config from "@arcgis/core/config";
 // import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 // import LayerSearchSource from "@arcgis/core/widgets/Search/LayerSearchSource";
 // import * as geometryEngine from "@arcgis/core/geometry/geometryEngine";
@@ -40,7 +40,7 @@ interface NearBySuggestion {
 
 function App() {
   const mapTargetElement = useRef<HTMLDivElement>(null);
-  const apikey = "c84e886891014383bcf608423555b0ba";
+  const apikey = "84d61c19659a4cc7afe7cda7a903deb6";
   const [map, setMap] = useState<MapView>();
 
   useEffect(() => {
@@ -49,13 +49,27 @@ function App() {
     const locationSearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/locationSearch";
     const nearBySearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/searchNearby";
 
-    
     if (mapTargetElement.current) {
       /**
        * Initialize application
        */
-
-
+      /*
+    basemap: "https://api.hkmapservice.gov.hk/ags/map/basemap/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
+    basemapGnet: "https://mapapi.landsd.ccgo.hksarg/ags/map/basemap/WGS84?key=4ba543f0-8fb7-3c87-bc75-e2db85930c63",
+    labelmapTCUrl: "https://api.hkmapservice.gov.hk/ags/map/label-tc/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
+    labelmapSCUrl: "https://api.hkmapservice.gov.hk/ags/map/label-sc/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
+    labelmapENUrl: "https://api.hkmapservice.gov.hk/ags/map/label-en/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
+*/
+      if (config.request.interceptors) {
+        config.request.interceptors.push({
+          before: function (params) {
+            params.requestOptions.query = {
+              ...params.requestOptions.query,
+              key: apikey,
+            };
+          },
+        });
+      }
 
       const baseLayer = new VectorTileLayer({
         url: basemapVTURL,
@@ -91,7 +105,7 @@ function App() {
             x: params?.suggestResult?.x,
             y: params?.suggestResult?.y,
             spatialReference: new SpatialReference({ wkid: 2326 }),
-          })
+          });
           const outerGraphic = new Graphic({
             geometry: outerPoint,
             attributes: {
@@ -100,8 +114,7 @@ function App() {
               spatialReference: new SpatialReference({ wkid: 2326 }),
               label: params?.suggestResult?.text,
               name: params?.suggestResult?.text,
-              
-            }
+            },
           });
 
           const bufferXInDegrees = 1;
@@ -139,7 +152,7 @@ function App() {
                     y: item.y,
                     label: item.address,
                     name: item.name,
-                    spatialReference: new SpatialReference({ wkid: 2326 })
+                    spatialReference: new SpatialReference({ wkid: 2326 }),
                   },
                 });
                 const innerExtent = new Extent({
@@ -154,7 +167,7 @@ function App() {
                   extent: innerExtent,
                   feature: graphic,
                   name: item.name,
-                  target: { center: innerPoint, scale: 540}
+                  target: { center: innerPoint, scale: 540 },
                 };
               });
 
@@ -165,20 +178,17 @@ function App() {
                   extent: outerExtent,
                   feature: outerGraphic,
                   name: params?.suggestResult.text,
-                  
                 },
               ];
             }
-            console.log(`some nearby found!!`)
+            console.log(`some nearby found!!`);
             return [
               {
                 extent: outerGraphic.geometry.extent,
                 feature: outerGraphic,
                 name: params?.suggestResult.text,
-                
-                
               },
-               ...results,
+              ...results,
             ];
           });
         },
@@ -270,7 +280,7 @@ function App() {
 
       thisview.ui.add(searchWidget, { position: "top-right" });
       searchWidget.on("select-result", function (e) {
-        return thisview.goTo({center: new Point(e.result.feature.attributes), scale: 540});
+        return thisview.goTo({ center: new Point(e.result.feature.attributes), scale: 540 });
       });
     }
 

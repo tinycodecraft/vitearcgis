@@ -1,0 +1,76 @@
+const apikey = "c84e886891014383bcf608423555b0ba";
+const basemapVTURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/HK80";
+const mapLabelVTUrl = "https://api.hkmapservice.gov.hk/ags/map/label-en/HK80";
+
+require([
+  "esri/Map", "esri/Basemap",
+  "esri/layers/TileLayer",
+  "esri/views/MapView",
+  "esri/config",
+  "esri/geometry/SpatialReference",
+  "esri/geometry/Point",
+  "esri/widgets/Search",
+  "esri/tasks/Locator",
+], function(Map, Basemap, TileLayer, MapView, esriConfig, SpatialReference, Point, Search,
+  Locator) {
+
+
+  esriConfig.request.interceptors.push({
+    before: function(params) {
+      if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
+        if (params.requestOptions.query) {
+          params.requestOptions.query.key = apikey
+        } else {
+          params.requestOptions.query = {
+            key: apikey
+          }
+        }
+      }
+    },
+    after: function(response) {
+      if (!response.ssl) {
+        response.ssl = true;
+      }
+    }
+  });
+
+
+  var map = new Map();
+  map.add(new TileLayer({
+    url: basemapVTURL,
+    copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy;  Map information from Lands Department<div class='landsdlogo'></div></a>"
+  }));
+  map.add(new TileLayer(mapLabelVTUrl));
+  var mView = new MapView({
+    container: "viewDiv",
+    map: map,
+    zoom: 11,
+    center: new Point(833359, 822961, new SpatialReference({
+      wkid: 2326
+    })),
+  });
+
+  fetch(basemapVTURL + "?f=json&key=" + apikey).then(response => response.json())
+    .then(data => {
+      mView.constraints.lods = data.tileInfo.lods;
+    });
+
+  var searchWidget = new Search({
+    view: mView,
+    includeDefaultSources: false,
+    locationEnabled: false,
+    sources: [{
+      name: 'Composite',
+      placeholder: 'Composite Locator',
+      locator: new Locator({
+        url: 'https://api.hkmapservice.gov.hk/ags/gc/composite/en'
+      })
+    }]
+  });
+
+  mView.ui.add(searchWidget, {
+    position: "top-right"
+  });
+
+
+})
