@@ -60,13 +60,19 @@ function App() {
     labelmapSCUrl: "https://api.hkmapservice.gov.hk/ags/map/label-sc/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
     labelmapENUrl: "https://api.hkmapservice.gov.hk/ags/map/label-en/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
 */
+
+      
+
       if (config.request.interceptors) {
         config.request.interceptors.push({
           before: function (params) {
+            console.log(`the config try to request: `,params)
+
             params.requestOptions.query = {
               ...params.requestOptions.query,
               key: apikey,
             };
+            
           },
         });
       }
