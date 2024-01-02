@@ -21,6 +21,12 @@ import Graphic from "@arcgis/core/Graphic";
 // import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
 import { sort } from "fast-sort";
 
+/*
+  proxy means :   the request client is changed to proxy server, such that the proxy server will act as client to get the result 
+                  from the target server
+  reverse proxy:  the target resource is changed to proxy server, such that the proxy server will act for client to get the result 
+                  from hidden target server
+*/
 interface ItemSuggestion {
   addressZH: string;
   nameZH: string;
@@ -28,6 +34,9 @@ interface ItemSuggestion {
   y: number;
   nameEN: string;
   addressEN: string;
+}
+interface ItemSuggestionWithText extends ItemSuggestion {
+  text: string;
 }
 interface NearBySuggestion {
   address?: string;
@@ -38,6 +47,47 @@ interface NearBySuggestion {
   additionalInfoKey?: string[];
 }
 
+const createPointResult = (x?: number, y?: number, text?: string, label?: string) => {
+  if (x && y && text) {
+    const outerPoint = new Point({
+      x: x,
+      y: y,
+      spatialReference: new SpatialReference({ wkid: 2326 }),
+    });
+    const outerGraphic = new Graphic({
+      geometry: outerPoint,
+      attributes: {
+        x: x,
+        y: y,
+        spatialReference: new SpatialReference({ wkid: 2326 }),
+        label: label ?? text,
+        name: text,
+      },
+    });
+
+    const bufferXInDegrees = 1;
+    const bufferYInDegrees = 1;
+
+    // Create an extent based on the point and buffer distances
+    const outerExtent = new Extent({
+      xmin: x - bufferXInDegrees,
+      ymin: y - bufferYInDegrees,
+      xmax: x + bufferXInDegrees,
+      ymax: y + bufferYInDegrees,
+      spatialReference: outerGraphic.geometry.spatialReference,
+    });
+    outerExtent.expand(50);
+
+    return {
+      extent: outerExtent,
+      feature: outerGraphic,
+      name: text,
+    };
+  }
+
+  return undefined;
+};
+
 function App() {
   const mapTargetElement = useRef<HTMLDivElement>(null);
   const apikey = "84d61c19659a4cc7afe7cda7a903deb6";
@@ -46,7 +96,7 @@ function App() {
   useEffect(() => {
     const basemapVTURL = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/HK80";
     const mapLabelVTUrl = "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk/tc/HK80";
-    const locationSearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/locationSearch";
+    const locationSearchUrl = "/locsearch";
     const nearBySearchUrl = "https://geodata.gov.hk/gs/api/v1.0.0/searchNearby";
 
     if (mapTargetElement.current) {
@@ -61,18 +111,13 @@ function App() {
     labelmapENUrl: "https://api.hkmapservice.gov.hk/ags/map/label-en/WGS84?key=84d61c19659a4cc7afe7cda7a903deb6",
 */
 
-      
-
       if (config.request.interceptors) {
         config.request.interceptors.push({
           before: function (params) {
-            console.log(`the config try to request: `,params)
-
             params.requestOptions.query = {
               ...params.requestOptions.query,
               key: apikey,
             };
-            
           },
         });
       }
@@ -103,100 +148,93 @@ function App() {
 
         layer: baseLayer,
         zoomScale: 240,
+        suffix: " ",
 
         getResults: (params) => {
           console.log(`the parameters from results`, params);
 
-          const outerPoint = new Point({
-            x: params?.suggestResult?.x,
-            y: params?.suggestResult?.y,
-            spatialReference: new SpatialReference({ wkid: 2326 }),
-          });
-          const outerGraphic = new Graphic({
-            geometry: outerPoint,
-            attributes: {
-              x: params?.suggestResult?.x,
-              y: params?.suggestResult?.y,
-              spatialReference: new SpatialReference({ wkid: 2326 }),
-              label: params?.suggestResult?.text,
-              name: params?.suggestResult?.text,
-            },
-          });
+          const outerResult = createPointResult(params?.suggestResult?.x, params?.suggestResult?.y, params?.suggestResult?.text);
+          if (outerResult === undefined) {
+            return fetch(
+              locationSearchUrl +
+                "?" +
+                new URLSearchParams({
+                  q: params.suggestResult.text.replace(/ /g, "+"),
+                })
+            )
+              .then((raw) => raw.json())
+              .then((data) => {
+                const result = data.map((item: ItemSuggestion) => {
+                  let text = item.addressEN;
+                  if (!text) text = item.addressZH;
+                  else {
+                    text += `\n${item.addressZH}`;
+                  }
+                  if (!text) {
+                    text = item.nameEN;
+                    if (!text) {
+                      text = item.nameZH;
+                    } else {
+                      text += `\n${item.nameZH}`;
+                    }
+                  }
 
-          const bufferXInDegrees = 1;
-          const bufferYInDegrees = 1;
-
-          // Create an extent based on the point and buffer distances
-          const outerExtent = new Extent({
-            xmin: params?.suggestResult?.x - bufferXInDegrees,
-            ymin: params?.suggestResult?.y - bufferYInDegrees,
-            xmax: params?.suggestResult?.x + bufferXInDegrees,
-            ymax: params?.suggestResult?.y + bufferYInDegrees,
-            spatialReference: outerGraphic.geometry.spatialReference,
-          });
-          outerExtent.expand(50);
-
-          return request(nearBySearchUrl, {
-            query: {
-              x: params?.suggestResult?.x,
-              y: params?.suggestResult?.y,
-              lang: "en",
-            },
-            responseType: "json",
-          }).then((result) => {
-            console.log(`the result item returned from nearby`, result);
-
-            const results = result.data
-              .filter((e: NearBySuggestion) => e.address && e.address !== "")
-              .slice(0, 1)
-              .map((item: NearBySuggestion) => {
-                const innerPoint = new Point({ x: item.x, y: item.y, spatialReference: new SpatialReference({ wkid: 2326 }) });
-                const graphic = new Graphic({
-                  geometry: innerPoint,
-                  attributes: {
+                  return {
+                    key: `${item.x}!${item.y}`,
+                    text: text,
+                    addressEN: item.addressEN,
+                    sourceIndex: params.sourceIndex,
+                    addressZH: item.addressZH,
+                    nameEN: item.nameEN,
+                    nameZH: item.nameZH,
                     x: item.x,
                     y: item.y,
-                    label: item.address,
-                    name: item.name,
-                    spatialReference: new SpatialReference({ wkid: 2326 }),
-                  },
+                    spatialReference: params.spatialReference,
+                  };
                 });
-                const innerExtent = new Extent({
-                  xmin: item.x - bufferXInDegrees,
-                  ymin: item.y - bufferYInDegrees,
-                  xmax: item.x + bufferXInDegrees,
-                  ymax: item.y + bufferYInDegrees,
-                  spatialReference: graphic.geometry.spatialReference,
-                });
-                innerExtent.expand(50);
-                return {
-                  extent: innerExtent,
-                  feature: graphic,
-                  name: item.name,
-                  target: { center: innerPoint, scale: 540 },
-                };
-              });
 
-            if (!results || results.length == 0) {
-              console.log(`the suggestResult cannot get any nearby`, params?.suggestResult);
-              return [
-                {
-                  extent: outerExtent,
-                  feature: outerGraphic,
-                  name: params?.suggestResult.text,
-                },
-              ];
-            }
-            console.log(`some nearby found!!`);
-            return [
-              {
-                extent: outerGraphic.geometry.extent,
-                feature: outerGraphic,
-                name: params?.suggestResult.text,
+                const transdata = sort(result as ItemSuggestionWithText[]).desc([(u) => u.text.length, (u) => u.text]);
+
+                const unqdata = pipe(
+                  transdata,
+                  A.uniqBy((e) => e.text.replace(/ /g, ""))
+                ).map((e) => e);
+
+                if (unqdata && unqdata.length > 0) {
+                  const firstdata = unqdata[0] as ItemSuggestionWithText;
+                  const firstouterResult = createPointResult(firstdata.x, firstdata.y, firstdata.text, firstdata.text);
+                  return [firstouterResult];
+                }
+                return [];
+              });
+          } else {
+            return request(nearBySearchUrl, {
+              query: {
+                x: params?.suggestResult?.x,
+                y: params?.suggestResult?.y,
+                lang: "en",
               },
-              ...results,
-            ];
-          });
+              responseType: "json",
+            }).then((result) => {
+              console.log(`the result item returned from nearby`, result);
+
+              const results = result.data
+                .filter((e: NearBySuggestion) => e.address && e.address !== "")
+                .slice(0, 1)
+                .map((item: NearBySuggestion) => {
+                  const innerResult = createPointResult(item.x, item.y, item.name, item.address);
+
+                  return innerResult;
+                });
+
+              if (!results || results.length == 0) {
+                console.log(`the suggestResult cannot get any nearby`, params?.suggestResult);
+                return [outerResult];
+              }
+              console.log(`some nearby found!!`);
+              return [outerResult, ...results];
+            });
+          }
         },
 
         outFields: ["text"],
@@ -204,53 +242,61 @@ function App() {
 
         getSuggestions: (params) => {
           console.log(`test parameters from getsuggestions`, params);
-          return request(locationSearchUrl, {
-            query: {
-              q: params.suggestTerm.replace(/ /g, "+"),
-            },
-            responseType: "json",
-          }).then((result) => {
-            console.log(`the result from suggestions`, result);
-
-            const data = result.data.map((item: ItemSuggestion) => {
-              let text = item.addressEN;
-              if (!text) text = item.addressZH;
-              else {
-                text += `\n${item.addressZH}`;
-              }
-              if (!text) {
-                text = item.nameEN;
-                if (!text) {
-                  text = item.nameZH;
-                } else {
-                  text += `\n${item.nameZH}`;
+          const rawTerm = (params.suggestTerm as string) || " ";
+          const suggestTerm = rawTerm + " ";
+          return fetch(
+            locationSearchUrl +
+              "?" +
+              new URLSearchParams({
+                q: suggestTerm.replace(/ /g, "+"),
+              }),
+            {
+              headers: [],
+            }
+          )
+            .then((raw) => raw.json())
+            .then((result) => {
+              console.log(`the result from suggestions`, result);
+              // result.data
+              const data = result.map((item: ItemSuggestion) => {
+                let text = item.addressEN;
+                if (!text) text = item.addressZH;
+                else {
+                  text += `\n${item.addressZH}`;
                 }
-              }
+                if (!text) {
+                  text = item.nameEN;
+                  if (!text) {
+                    text = item.nameZH;
+                  } else {
+                    text += `\n${item.nameZH}`;
+                  }
+                }
 
-              return {
-                key: `${item.x}!${item.y}`,
-                text: text,
-                addressEN: item.addressEN,
-                sourceIndex: params.sourceIndex,
-                addressZH: item.addressZH,
-                nameEN: item.nameEN,
-                nameZH: item.nameZH,
-                x: item.x,
-                y: item.y,
-                spatialReference: params.spatialReference,
-              };
+                return {
+                  key: `${item.x}!${item.y}`,
+                  text: text,
+                  addressEN: item.addressEN,
+                  sourceIndex: params.sourceIndex,
+                  addressZH: item.addressZH,
+                  nameEN: item.nameEN,
+                  nameZH: item.nameZH,
+                  x: item.x,
+                  y: item.y,
+                  spatialReference: params.spatialReference,
+                };
+              });
+
+              const transdata = sort(data as { key: string; text: string; sourceIndex: number; spatialReference: SpatialReference }[]).desc([
+                (u) => u.text.length,
+                (u) => u.text,
+              ]);
+
+              return pipe(
+                transdata,
+                A.uniqBy((e) => e.text.replace(/ /g, ""))
+              ).map((e) => e);
             });
-
-            const transdata = sort(data as { key: string; text: string; sourceIndex: number; spatialReference: SpatialReference }[]).desc([
-              (u) => u.text.length,
-              (u) => u.text,
-            ]);
-
-            return pipe(
-              transdata,
-              A.uniqBy((e) => e.text)
-            ).map((e) => e);
-          });
         },
       });
 

@@ -1,6 +1,7 @@
 const apikey = "c84e886891014383bcf608423555b0ba";
-const basemapVTURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/VT/WGS84/resources/styles/root.json"
-const labels = [{
+const basemapVTURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/VT/WGS84/resources/styles/root.json";
+const labels = [
+  {
     id: "cb_en",
     url: "https://api.hkmapservice.gov.hk/ags/map/label-en/VT/WGS84/resources/styles/root.json",
   },
@@ -10,14 +11,13 @@ const labels = [{
   },
   {
     id: "cb_sc",
-    url: "https://api.hkmapservice.gov.hk/ags/map/label-sc/VT/WGS84/resources/styles/root.json"
-  }
+    url: "https://api.hkmapservice.gov.hk/ags/map/label-sc/VT/WGS84/resources/styles/root.json",
+  },
 ];
-
 
 let vectorStyleJson;
 const styleLayerIds = {
-  "Building": [
+  Building: [
     "Lv13/10_BLDGPOLY_50K/BLD",
     "Lv13/10_BLDGPOLY_50K/CGA/0",
     "Lv13/10_BLDGPOLY_50K/CGA/1",
@@ -119,9 +119,9 @@ const styleLayerIds = {
     "Lv19-Lv20/6_BuildingAccessoryLine_1K/OH",
     "Lv19-Lv20/6_BuildingAccessoryLine_1K/UN",
     "Lv19-Lv20/7_CartoBuildingLine_1K",
-    "LV7-LV12/9_BLDGPOLY_200K"
+    "LV7-LV12/9_BLDGPOLY_200K",
   ],
-  "Road": [
+  Road: [
     "Lv13/5_Road/5_1_Expressway_Elevated/TSPTLINE_50K:3",
     "Lv13/5_Road/5_1_RoadCasing_Elevated/TSPTLINE_50K:28",
     "Lv13/5_Road/5_1_RoadCasing_Elevated/TSPTLINE_50K:5",
@@ -327,9 +327,9 @@ const styleLayerIds = {
     "LV7-LV12/7_Main Road(MRD-2_MRD-3)/TSPTLINE_200K:3",
     "LV7-LV12/7_Main Road(MRD-2_MRD-3)/TSPTLINE_200K:4",
     "LV7-LV12/8_Secondary Road(SRD-2_SRD-3)/TSPTLINE_200K:1",
-    "LV7-LV12/8_Secondary Road(SRD-2_SRD-3)/TSPTLINE_200K:2"
+    "LV7-LV12/8_Secondary Road(SRD-2_SRD-3)/TSPTLINE_200K:2",
   ],
-  "Railway": [
+  Railway: [
     "Lv13/1_Railway/TSPTLINE_50K:4",
     "Lv14/6_Railway/TSPTLINE_50K:30",
     "Lv15/0_MTR_POINT_10K:2",
@@ -397,7 +397,7 @@ const styleLayerIds = {
     "MTR_POINT",
     "RailwayEntrance",
   ],
-  "Contour": [
+  Contour: [
     "Lv13/14_Elevation Polygon_TintLayer_50K/1000",
     "Lv13/14_Elevation Polygon_TintLayer_50K/200",
     "Lv13/14_Elevation Polygon_TintLayer_50K/300",
@@ -477,9 +477,9 @@ const styleLayerIds = {
     "Lv15/5_ELEVLINE_10K",
     "Lv14/3_ELEVLINE_50K",
     "Lv15/5_ELEVLINE_10K/label/Default",
-    "Lv16/6_ELEVLINE_10K/label/Default"
+    "Lv16/6_ELEVLINE_10K/label/Default",
   ],
-  "Facility": [
+  Facility: [
     "Lv13/11_FACIPOLY_50K/GCO",
     "Lv13/11_FACIPOLY_50K/PAR",
     "Lv13/11_FACIPOLY_50K/SGD",
@@ -524,17 +524,10 @@ const styleLayerIds = {
     "Lv19-Lv20/39_POIPoly_5K/OG, SPL",
     "Lv19-Lv20/39_POIPoly_5K/OG, STD",
     "Lv19-Lv20/39_POIPoly_5K/US, PLG",
-    "Lv19-Lv20/39_POIPoly_5K/US, SGD"
+    "Lv19-Lv20/39_POIPoly_5K/US, SGD",
   ],
-  "Mainland": [
-    "Lv19-Lv20/17_Mainland",
-    "Lv17-Lv18/1_Mainland:4",
-    "Lv16/1_Mainland:1",
-    "Lv15/1_Mainland:2",
-    "Lv14/1_Mainland:3",
-    "Lv13/4_Mainland",
-  ],
-  "Water": [
+  Mainland: ["Lv19-Lv20/17_Mainland", "Lv17-Lv18/1_Mainland:4", "Lv16/1_Mainland:1", "Lv15/1_Mainland:2", "Lv14/1_Mainland:3", "Lv13/4_Mainland"],
+  Water: [
     "2_HydroPolyMask/OG, STO; OG, CAT",
     "3_HydroPolyMask",
     "Lv13/13_HYDRPOLY_50K/BKW-1",
@@ -604,16 +597,12 @@ const styleLayerIds = {
     "LV7-LV12/10_HYDRPOLY_200K/PON-1",
     "LV7-LV12/10_HYDRPOLY_200K/RES-1",
     "LV7-LV12/10_HYDRPOLY_200K/STO-1",
-    "LV7-LV12/13_HYDRPOLY_Seafill_200K"
-  ]
-}
+    "LV7-LV12/13_HYDRPOLY_Seafill_200K",
+  ],
+};
 
-const initWidgets = function(mapView) {
-  require([
-    "esri/widgets/Track",
-    "esri/widgets/Home",
-    "esri/widgets/Compass",
-  ], function(Track, Home, Compass) {
+const initWidgets = function (mapView) {
+  require(["esri/widgets/Track", "esri/widgets/Home", "esri/widgets/Compass"], function (Track, Home, Compass) {
     const trackWidget = new Track({
       view: mapView,
     });
@@ -629,7 +618,7 @@ const initWidgets = function(mapView) {
     mapView.ui.add(compass, "top-left");
   });
 };
-const initCustomStyle = function(styleLayerIds, vectorStyleJson, vectorLayer) {
+const initCustomStyle = function (styleLayerIds, vectorStyleJson, vectorLayer) {
   let custStyleGroup = "";
   for (let type in styleLayerIds) {
     let typeIdArr = styleLayerIds[type];
@@ -640,23 +629,23 @@ const initCustomStyle = function(styleLayerIds, vectorStyleJson, vectorLayer) {
   }
   $("#customStyle").html(`<table>${custStyleGroup}</table>`);
 };
-const setStyleLayer = function(layer, styleLayerId, selectedColor) {
+const setStyleLayer = function (layer, styleLayerId, selectedColor) {
   const paintProperties = layer.getPaintProperties(styleLayerId);
   paintProperties["line-color"] = selectedColor;
   paintProperties["fill-color"] = selectedColor;
   layer.setPaintProperties(styleLayerId, paintProperties);
 };
-const enableStyleLayer = function(layer, styleLayerId, val) {
+const enableStyleLayer = function (layer, styleLayerId, val) {
   layer.setStyleLayerVisibility(styleLayerId, val ? "visible" : "none");
 };
-const reset = async function(layer) {
+const reset = async function (layer) {
   for (let type in styleLayerIds) {
     $(`#check_${type}`).prop("checked", true);
     $(`#${type}`).val("#000000");
   }
   return layer.loadStyle(`${basemapVTURL}?key=${apikey}`);
 };
-const exportStyle = function(layer, styleJson) {
+const exportStyle = function (layer, styleJson) {
   let exptStyle = layer.currentStyleInfo.style;
   for (var i in styleJson.layers) {
     const styleLayer = styleJson.layers[i];
@@ -665,32 +654,21 @@ const exportStyle = function(layer, styleJson) {
   }
 
   var element = document.createElement("a");
-  element.setAttribute(
-    "href",
-    "data:text/plain;charset=utf-8," +
-    encodeURIComponent(JSON.stringify(exptStyle, null, "\t"))
-  );
+  element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(exptStyle, null, "\t")));
   element.setAttribute("download", "style.json");
   element.style.display = "none";
   document.body.appendChild(element);
   element.click();
   document.body.removeChild(element);
 };
-const colorOpt = function(paintProp, colorOptFunc) {
-  let colorType = [
-    "line-color",
-    "fill-color",
-    "fill-outline-color",
-    "icon-color",
-    "text-color",
-    "text-halo-color",
-  ];
+const colorOpt = function (paintProp, colorOptFunc) {
+  let colorType = ["line-color", "fill-color", "fill-outline-color", "icon-color", "text-color", "text-halo-color"];
   for (let t of colorType) {
     if (paintProp[t]) paintProp[t] = colorOptFunc(paintProp[t]);
   }
   return paintProp;
 };
-const colorScale = function(colorType, color) {
+const colorScale = function (colorType, color) {
   var matchColors = /#(\w{2})(\w{2})(\w{2})/;
   var match = matchColors.exec(color);
   if (match) {
@@ -717,7 +695,7 @@ const colorScale = function(colorType, color) {
   }
   return color;
 };
-const Grayscale = async function(layer, styleJson) {
+const Grayscale = async function (layer, styleJson) {
   await reset(layer);
   for (var i in styleJson.layers) {
     const styleLayer = styleJson.layers[i];
@@ -728,7 +706,7 @@ const Grayscale = async function(layer, styleJson) {
     layer.setPaintProperties(styleLayer.id, paintProperties);
   }
 };
-const RedScale = async function(layer, styleJson) {
+const RedScale = async function (layer, styleJson) {
   await reset(layer);
   for (var i in styleJson.layers) {
     const styleLayer = styleJson.layers[i];
@@ -739,7 +717,7 @@ const RedScale = async function(layer, styleJson) {
     layer.setPaintProperties(styleLayer.id, paintProperties);
   }
 };
-const GreenScale = async function(layer, styleJson) {
+const GreenScale = async function (layer, styleJson) {
   await reset(layer);
   for (var i in styleJson.layers) {
     const styleLayer = styleJson.layers[i];
@@ -750,7 +728,7 @@ const GreenScale = async function(layer, styleJson) {
     layer.setPaintProperties(styleLayer.id, paintProperties);
   }
 };
-const BlueScale = async function(layer, styleJson) {
+const BlueScale = async function (layer, styleJson) {
   await reset(layer);
   for (var i in styleJson.layers) {
     const styleLayer = styleJson.layers[i];
@@ -761,18 +739,18 @@ const BlueScale = async function(layer, styleJson) {
     layer.setPaintProperties(styleLayer.id, paintProperties);
   }
 };
-const Random = function(layer, styleJson) {
+const Random = function (layer, styleJson) {
   for (i in styleJson.layers) {
     styleLayer = styleJson.layers[i];
     var randomColor = Math.floor(Math.random() * 16777215).toString(16);
     setStyleLayer(layer, styleLayer.id, `#${randomColor}`);
   }
 };
-const load = function(layer, url) {
+const load = function (layer, url) {
   $("#load_msg").text("Loading..");
   fetch(url)
     .then((response) => response.json())
-    .then(async function(data) {
+    .then(async function (data) {
       await layer.loadStyle(url);
       for (let type in styleLayerIds) {
         $(`#check_${type}`).prop("checked", true);
@@ -785,39 +763,37 @@ const load = function(layer, url) {
     });
 };
 
-
-require([
-  "esri/Map", "esri/Basemap", "esri/layers/VectorTileLayer",
-  "esri/views/MapView", "esri/config",
-  "esri/geometry/Point",
-], function(Map, Basemap, VectorTileLayer,
-  MapView, esriConfig, Point
+require(["esri/Map", "esri/Basemap", "esri/layers/VectorTileLayer", "esri/views/MapView", "esri/config", "esri/geometry/Point"], function (
+  Map,
+  Basemap,
+  VectorTileLayer,
+  MapView,
+  esriConfig,
+  Point
 ) {
   esriConfig.request.interceptors.push({
-    before: function(params) {
+    before: function (params) {
       if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
         if (params.requestOptions.query) {
-          params.requestOptions.query.key = apikey
+          params.requestOptions.query.key = apikey;
         } else {
           params.requestOptions.query = {
-            key: apikey
-          }
+            key: apikey,
+          };
         }
       }
     },
-    after: function(response) {
+    after: function (response) {
       if (!response.ssl) {
         response.ssl = true;
       }
-    }
+    },
   });
 
   const vectorLayer = new VectorTileLayer(basemapVTURL);
   const labelTc = new VectorTileLayer(labels[1]);
   const basemap = new Basemap({
-    baseLayers: [
-      vectorLayer
-    ]
+    baseLayers: [vectorLayer],
   });
   const map = new Map({
     basemap: basemap,
@@ -828,40 +804,31 @@ require([
     container: "viewDiv",
     map: map,
     zoom: 10,
-    center: new Point(114.12, 22.35)
+    center: new Point(114.12, 22.35),
   });
-
 
   initWidgets(mView);
 
-  const enableLayer = function(event) {
+  const enableLayer = function (event) {
     for (var idx in labels) {
       let lblId = labels[idx].id;
-      if (lblId == event.target.id && event.target.checked)
-        map.add(new VectorTileLayer(labels[idx]));
+      if (lblId == event.target.id && event.target.checked) map.add(new VectorTileLayer(labels[idx]));
       else {
         document.getElementById(lblId).checked = false;
         let layer = map.findLayerById(lblId);
-        if (layer)
-          map.remove(layer);
+        if (layer) map.remove(layer);
       }
-
     }
-  }
+  };
   for (var idx in labels) {
     let lblId = labels[idx].id;
     document.getElementById(lblId).addEventListener("click", enableLayer);
   }
 
-
-
-  vectorLayer.when(
-    () => {
-      vectorStyleJson = vectorLayer.currentStyleInfo.style;
-    }
-  );
+  vectorLayer.when(() => {
+    vectorStyleJson = vectorLayer.currentStyleInfo.style;
+  });
   initCustomStyle(styleLayerIds);
-
 
   for (let type in styleLayerIds) {
     $(`#${type}`).on("input", () => {
@@ -883,30 +850,30 @@ require([
   }
 
   $("#Grayscale").on("click", (event) => {
-    Grayscale(vectorLayer, vectorStyleJson)
+    Grayscale(vectorLayer, vectorStyleJson);
   });
   $("#RedScale").on("click", (event) => {
-    RedScale(vectorLayer, vectorStyleJson)
+    RedScale(vectorLayer, vectorStyleJson);
   });
   $("#GreenScale").on("click", (event) => {
-    GreenScale(vectorLayer, vectorStyleJson)
+    GreenScale(vectorLayer, vectorStyleJson);
   });
   $("#BlueScale").on("click", (event) => {
-    BlueScale(vectorLayer, vectorStyleJson)
+    BlueScale(vectorLayer, vectorStyleJson);
   });
   $("#Random").on("click", (event) => {
-    Random(vectorLayer, vectorStyleJson)
+    Random(vectorLayer, vectorStyleJson);
   });
   $("#resetStyle").on("click", () => {
     reset(vectorLayer);
   });
   $("#exportStyle").on("click", (event) => {
-    exportStyle(vectorLayer, vectorStyleJson)
+    exportStyle(vectorLayer, vectorStyleJson);
   });
   $("#load").on("click", (event) => {
     url = decodeURIComponent($("#styleLink").val());
     load(vectorLayer, url);
   });
-  
+
   $("#rightPane").draggable();
 });
