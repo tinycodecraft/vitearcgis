@@ -37,6 +37,8 @@ interface ItemSuggestion {
 }
 interface ItemSuggestionWithText extends ItemSuggestion {
   text: string;
+  key: string;
+  sourceIndex: number;
 }
 interface NearBySuggestion {
   address?: string;
@@ -287,7 +289,7 @@ function App() {
                 };
               });
 
-              const transdata = sort(data as { key: string; text: string; sourceIndex: number; spatialReference: SpatialReference }[]).desc([
+              const transdata = sort(data as ItemSuggestionWithText[]).desc([
                 (u) => u.text.length,
                 (u) => u.text,
               ]);
